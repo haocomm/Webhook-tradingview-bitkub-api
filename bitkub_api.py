@@ -42,11 +42,30 @@ def place_order(symbol, side, amt, rat=None, typ="limit"):
     typ: "limit" or "market"
     """
     path = "/api/v3/market/place-bid" if side == "buy" else "/api/v3/market/place-ask"
+
+    # --- amt ---
+    if amt is None or str(amt).strip() == "":
+        raise ValueError("Amount (amt) is required and cannot be empty")
+    try:
+       if typ == "buy":
+        amt = int(str(amt).strip()) - 100   # แปลงจาก string → int โดยตรง ( -100 THB for fee)
+       else:
+        amt = float(str(amt).strip())
+    except Exception as e:
+        raise ValueError(f"Invalid amount value: {amt}") from e
+
+    
     body = {
         "sym": symbol,   # e.g. btc_thb
         "amt": amt,      # amount in base coin
         "typ": typ
     }
     if typ == "limit" and rat:
+        if rat is None or str(rat).strip() == "":
+            raise ValueError("Rate (rat) is required for limit orders")
+        try:
+            rat = int(str(rat).strip())  # แปลงจาก string → int โดยตรง
+        except Exception as e:
+            raise ValueError(f"Invalid rate value: {rat}") from e
         body["rat"] = rat
     return private_request("POST", path, body)
