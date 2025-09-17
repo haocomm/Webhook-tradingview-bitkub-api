@@ -3,15 +3,30 @@ from bitkub_api import get_balances, place_order
 
 app = Flask(__name__)
 
+# ====== ตั้งค่า API KEY ======
+API_KEY = "gMXEJ2RvUVRmuaFaFfMr"
+
+def require_api_key(func):
+    """Decorator สำหรับตรวจสอบ API Key"""
+    def wrapper(*args, **kwargs):
+        key = request.headers.get("X-API-KEY")
+        if not key or key != API_KEY:
+            return jsonify({"error": "Unauthorized"}), 401
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    return wrapper
+
 @app.route("/")
 def index():
     return {"status": "Bitkub Trading API running"}
 
 @app.route("/balance", methods=["GET"])
+@require_api_key
 def balance():
     return jsonify(get_balances())
 
 @app.route("/order", methods=["POST"])
+@require_api_key
 def order():
     data = request.json
     symbol = data.get("symbol", "btc_thb")
@@ -24,6 +39,7 @@ def order():
 
 # === Webhook for TradingView ===
 @app.route("/webhook", methods=["POST"])
+@require_api_key
 def webhook():
     data = request.json
     print("Webhook received:", data)
